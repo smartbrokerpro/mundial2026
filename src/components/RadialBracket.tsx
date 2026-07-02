@@ -396,17 +396,28 @@ export default function RadialBracket({ rounds }: { rounds: Round[] }) {
     gl.enable(gl.BLEND);
     gl.blendFunc(gl.ONE, gl.ONE); // aditivo -> glow
 
+    // Cache de ubicaciones de uniforms (evita getUniformLocation por frame).
+    const uEdgeRes = gl.getUniformLocation(edgeProg, "u_res");
+    const uEdgeTime = gl.getUniformLocation(edgeProg, "u_time");
+    const uNodeRes = gl.getUniformLocation(nodeProg, "u_res");
+    const uNodeTime = gl.getUniformLocation(nodeProg, "u_time");
+
     const start = performance.now();
     let raf = 0;
-    const draw = () => {
-      const t = (performance.now() - start) / 1000;
+    let lastDraw = 0;
+    const draw = (now: number) => {
+      raf = requestAnimationFrame(draw);
+      // Throttle a ~30fps y pausa si la pestaña no está visible.
+      if (document.hidden || now - lastDraw < 33) return;
+      lastDraw = now;
+      const t = (now - start) / 1000;
       gl.clearColor(0, 0, 0, 0);
       gl.clear(gl.COLOR_BUFFER_BIT);
 
       // conectores
       gl.useProgram(edgeProg);
-      gl.uniform2f(gl.getUniformLocation(edgeProg, "u_res"), canvas.width, canvas.height);
-      gl.uniform1f(gl.getUniformLocation(edgeProg, "u_time"), t);
+      gl.uniform2f(uEdgeRes, canvas.width, canvas.height);
+      gl.uniform1f(uEdgeTime, t);
       gl.bindBuffer(gl.ARRAY_BUFFER, edgeBuf);
       const stride = 7 * 4;
       bindAttr(gl, edgeProg, "a_pos", 2, stride, 0);
@@ -419,8 +430,8 @@ export default function RadialBracket({ rounds }: { rounds: Round[] }) {
 
       // nodos
       gl.useProgram(nodeProg);
-      gl.uniform2f(gl.getUniformLocation(nodeProg, "u_res"), canvas.width, canvas.height);
-      gl.uniform1f(gl.getUniformLocation(nodeProg, "u_time"), t);
+      gl.uniform2f(uNodeRes, canvas.width, canvas.height);
+      gl.uniform1f(uNodeTime, t);
       gl.bindBuffer(gl.ARRAY_BUFFER, nodeBuf);
       const ns = 6 * 4;
       bindAttr(gl, nodeProg, "a_pos", 2, ns, 0);
@@ -428,11 +439,16 @@ export default function RadialBracket({ rounds }: { rounds: Round[] }) {
       bindAttr(gl, nodeProg, "a_size", 1, ns, 4 * 4);
       bindAttr(gl, nodeProg, "a_state", 1, ns, 5 * 4);
       gl.drawArrays(gl.TRIANGLES, 0, nodeVerts.length / 6);
-
-      raf = requestAnimationFrame(draw);
     };
-    draw();
-    return () => cancelAnimationFrame(raf);
+    raf = requestAnimationFrame(draw);
+    // Libera recursos GL en cada re-run (evita fuga de programas/buffers -> crash).
+    return () => {
+      cancelAnimationFrame(raf);
+      gl.deleteBuffer(edgeBuf);
+      gl.deleteBuffer(nodeBuf);
+      gl.deleteProgram(edgeProg);
+      gl.deleteProgram(nodeProg);
+    };
   }, [nodes, w, h, zoomLevel]);
 
   // Goleadores del partido seleccionado (on-demand, solo si es de ESPN y ya empezó).

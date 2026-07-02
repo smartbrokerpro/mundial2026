@@ -91,15 +91,19 @@ export default function BackgroundFX() {
     window.addEventListener("resize", resize);
 
     let raf = 0;
+    let last = 0;
     const start = performance.now();
-    const render = () => {
-      const t = (performance.now() - start) / 1000;
+    const render = (now: number) => {
+      raf = requestAnimationFrame(render);
+      // ~24fps y pausa si la pestaña no está visible (fondo decorativo).
+      if (document.hidden || now - last < 42) return;
+      last = now;
+      const t = (now - start) / 1000;
       gl.uniform2f(uRes, canvas.width, canvas.height);
       gl.uniform1f(uTime, t);
       gl.drawArrays(gl.TRIANGLES, 0, 3);
-      raf = requestAnimationFrame(render);
     };
-    render();
+    raf = requestAnimationFrame(render);
 
     return () => {
       cancelAnimationFrame(raf);
