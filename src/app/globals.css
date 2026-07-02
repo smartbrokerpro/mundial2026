@@ -1128,7 +1128,7 @@ a {
 /* ---------- Responsive móvil ---------- */
 @media (max-width: 640px) {
   .app {
-    padding: 16px 12px 56px;
+    padding: 14px 4px 50px; /* casi sin padding horizontal -> más ancho útil */
   }
   .hero {
     flex-direction: column;
@@ -1159,30 +1159,32 @@ a {
     grid-template-columns: minmax(0, 1fr) 28px 38px 32px;
     padding: 6px 3px;
   }
-  /* Radial: cajas bien chicas para que quepan en el círculo sin apretarse */
+  /* Radial: cajas mínimas, sin padding horizontal, para máximo aprovechamiento */
   .radial-node {
-    min-width: 38px;
-    padding: 1px 4px;
+    min-width: 30px;
+    padding: 1px 0;
     gap: 1px;
-    border-radius: 7px;
+    border-radius: 6px;
   }
   .rn-team {
-    font-size: 8.5px;
-    gap: 3px;
+    font-size: 8px;
+    gap: 2px;
     font-weight: 800;
+    padding: 0 2px;
   }
   .rn-code {
-    min-width: 17px;
+    min-width: 14px;
   }
   .radial-node .fl-img {
-    width: 11px;
-    height: 11px;
+    width: 10px;
+    height: 10px;
   }
   .radial-node .fl {
-    font-size: 11px;
+    font-size: 10px;
   }
   .rn-sc {
-    font-size: 9px;
+    font-size: 8.5px;
+    padding-right: 1px;
   }
   .rn-when {
     font-size: 7.5px;
