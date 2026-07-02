@@ -1159,23 +1159,36 @@ a {
     grid-template-columns: minmax(0, 1fr) 28px 38px 32px;
     padding: 6px 3px;
   }
-  /* Radial más compacto para que no se corten los nodos */
+  /* Radial: cajas bien chicas para que quepan en el círculo sin apretarse */
   .radial-node {
-    min-width: 46px;
-    padding: 2px 5px;
+    min-width: 38px;
+    padding: 1px 4px;
+    gap: 1px;
+    border-radius: 7px;
   }
   .rn-team {
-    font-size: 10px;
-    gap: 4px;
+    font-size: 8.5px;
+    gap: 3px;
+    font-weight: 800;
   }
   .rn-code {
-    min-width: 20px;
+    min-width: 17px;
+  }
+  .radial-node .fl-img {
+    width: 11px;
+    height: 11px;
+  }
+  .radial-node .fl {
+    font-size: 11px;
+  }
+  .rn-sc {
+    font-size: 9px;
   }
   .rn-when {
-    font-size: 8px;
+    font-size: 7.5px;
   }
   .radial-node.active {
-    min-width: 116px;
+    min-width: 112px;
   }
   .radial-final {
     min-width: 118px;

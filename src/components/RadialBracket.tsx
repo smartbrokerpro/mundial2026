@@ -173,11 +173,11 @@ export default function RadialBracket({ rounds }: { rounds: Round[] }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [dims, setDims] = useState({ w: 720, h: 720 });
   const { w, h } = dims;
-  const size = Math.min(w, h); // dimensión de referencia (escala de nodos)
-  // Radios del anillo exterior por eje (elipse): usa el alto disponible en
-  // pantallas verticales. Márgenes = espacio para las cajas de los nodos.
-  const RmaxX = Math.max(60, w / 2 - 56);
-  const RmaxY = Math.max(60, h / 2 - 42);
+  const size = Math.min(w, h); // dimensión de referencia (círculo)
+  // Radio del anillo exterior — CIRCULAR (misma medida en ambos ejes), centrado.
+  const Rmax = Math.max(60, size / 2 - 46);
+  const RmaxX = Rmax;
+  const RmaxY = Rmax;
   const [selected, setSelected] = useState<string | null>(null);
   const [fs, setFs] = useState(false); // pantalla completa (solo el radial)
   // Zoom por pasos: 0 = todos los anillos; cada paso lleva el siguiente anillo
@@ -217,11 +217,8 @@ export default function RadialBracket({ rounds }: { rounds: Round[] }) {
         // no se recorta contra un cuadrado chico.
         setDims({ w: cw, h: ch });
       } else {
-        const bw = Math.max(320, Math.min(cw, 820));
-        // En móvil (angosto) lo hacemos más alto que ancho -> elipse vertical que
-        // reparte los 16 nodos y no queda apretado. En desktop, cuadrado.
-        const bh = bw < 560 ? Math.round(bw * 1.5) : bw;
-        setDims({ w: bw, h: bh });
+        const s = Math.max(320, Math.min(cw, 820));
+        setDims({ w: s, h: s }); // cuadrado -> círculo
       }
     };
     measure();
