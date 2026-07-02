@@ -3,7 +3,7 @@ import "./globals.css";
 import BackgroundFX from "@/components/BackgroundFX";
 
 export const metadata: Metadata = {
-  title: "Mundial 2026 · Llaves en vivo",
+  title: "WC 2026",
   description:
     "Calendario, resultados en vivo y llaves del Mundial 2026 — Next.js + MongoDB",
 };

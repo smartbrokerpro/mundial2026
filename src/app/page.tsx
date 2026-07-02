@@ -52,7 +52,7 @@ export default function Home() {
     <main className="app">
       <header className="hero">
         <div>
-          <h1>Mundial 2026 · Llaves en vivo</h1>
+          <h1>WC 2026</h1>
           <div className="sub">
             Canadá · México · Estados Unidos · datos en vivo
           </div>
@@ -65,26 +65,44 @@ export default function Home() {
         </span>
       </header>
 
-      <nav className="tabs">
-        <button
-          className={tab === "llaves" ? "active" : ""}
-          onClick={() => select("llaves")}
-        >
-          Llaves
-        </button>
-        <button
-          className={tab === "resumen" ? "active" : ""}
-          onClick={() => select("resumen")}
-        >
-          Resumen
-        </button>
-        <button
-          className={tab === "grupos" ? "active" : ""}
-          onClick={() => select("grupos")}
-        >
-          Grupos
-        </button>
-      </nav>
+      <div className="tabbar">
+        <nav className="tabs">
+          <button
+            className={tab === "llaves" ? "active" : ""}
+            onClick={() => select("llaves")}
+          >
+            Llaves
+          </button>
+          <button
+            className={tab === "grupos" ? "active" : ""}
+            onClick={() => select("grupos")}
+          >
+            Grupos
+          </button>
+          <button
+            className={tab === "resumen" ? "active" : ""}
+            onClick={() => select("resumen")}
+          >
+            Resumen
+          </button>
+        </nav>
+        {tab === "llaves" && (
+          <div className="tabs">
+            <button
+              className={bracketView === "radial" ? "active" : ""}
+              onClick={() => setBracketView("radial")}
+            >
+              Radial
+            </button>
+            <button
+              className={bracketView === "clasico" ? "active" : ""}
+              onClick={() => setBracketView("clasico")}
+            >
+              Clásico
+            </button>
+          </div>
+        )}
+      </div>
 
       {tab === "resumen" && (
         <>
@@ -122,20 +140,6 @@ export default function Home() {
 
       {tab === "llaves" && (
         <>
-          <div className="tabs" style={{ marginBottom: 18 }}>
-            <button
-              className={bracketView === "radial" ? "active" : ""}
-              onClick={() => setBracketView("radial")}
-            >
-              Radial
-            </button>
-            <button
-              className={bracketView === "clasico" ? "active" : ""}
-              onClick={() => setBracketView("clasico")}
-            >
-              Clásico
-            </button>
-          </div>
           {bracketView === "clasico" && live.length > 0 && (
             <section>
               <h2 className="section-title">🔴 En vivo ahora</h2>
