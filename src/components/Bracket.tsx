@@ -48,7 +48,7 @@ function TeamRow({ t }: { t: BTeam }) {
           t.lost ? "lose" : ""
         } ${t.provisional ? "prov" : ""}`}
       >
-        {tbd ? <span className="fl">⏳</span> : <Flag value={t.flag} size={18} />}
+        {!tbd && <Flag value={t.flag} size={18} />}
         {tbd ? t.placeholder : t.name}
         {t.provisional && <span className="prov-tag" title="Proyectado por el resultado en vivo">▲ en vivo</span>}
       </span>

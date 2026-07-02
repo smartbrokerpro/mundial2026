@@ -187,6 +187,10 @@ export default function RadialBracket({ rounds }: { rounds: Round[] }) {
   const wheelLock = useRef(false);
   const toggle = (slot: string) =>
     setSelected((s) => (s === slot ? null : slot));
+  const stepZoom = (dir: number) => {
+    setSelected(null);
+    setZoomLevel((l) => Math.min(3, Math.max(0, l + dir)));
+  };
   const ready = (rounds?.length ?? 0) > 0; // el stage recién existe con datos
 
   // Rueda del mouse: un scroll = un anillo (paso discreto), no continuo.
@@ -501,6 +505,23 @@ export default function RadialBracket({ rounds }: { rounds: Round[] }) {
             ⛶
           </button>
         )}
+        {/* Flechas de zoom (útiles en touch, sin rueda) */}
+        <div className="radial-zoom">
+          <button
+            onClick={() => stepZoom(1)}
+            disabled={zoomLevel >= 3}
+            aria-label="Acercar"
+          >
+            ▲
+          </button>
+          <button
+            onClick={() => stepZoom(-1)}
+            disabled={zoomLevel <= 0}
+            aria-label="Alejar"
+          >
+            ▼
+          </button>
+        </div>
         <div
           className="radial-stage"
           ref={stageRef}
@@ -598,7 +619,7 @@ export default function RadialBracket({ rounds }: { rounds: Round[] }) {
 function SideTeam({ t }: { t: BTeam }) {
   return (
     <span className={`rs-team ${t.provisional ? "prov" : ""}`}>
-      {t.code ? <Flag value={t.flag} size={13} /> : <span className="fl">⏳</span>}
+      {t.code && <Flag value={t.flag} size={13} />}
       <span className="rs-tcode">{t.code ?? "—"}</span>
       {t.score != null && <span className="rs-tsc">{t.score}</span>}
     </span>
@@ -622,7 +643,7 @@ function FinalCenter({
   const cls = n.live ? "live" : n.done ? "done" : "tbd";
   const row = (t: BTeam) => (
     <div className={`rf-row ${t.winner ? "win" : ""} ${t.lost ? "lose" : ""}`}>
-      {t.code ? <Flag value={t.flag} size={18} /> : <span className="fl">⏳</span>}
+      {t.code && <Flag value={t.flag} size={18} />}
       <span className="rf-name">{t.code ? t.name : "—"}</span>
       {t.score != null && (
         <span className="rf-sc">
@@ -725,7 +746,7 @@ function RadialNode({
         t.provisional ? "prov" : ""
       }`}
     >
-      {t.code ? <Flag value={t.flag} size={14} /> : <span className="fl">⏳</span>}
+      {t.code && <Flag value={t.flag} size={14} />}
       <span className="rn-code">{t.code ?? "—"}</span>
       {t.score != null && (
         <span className="rn-sc">
@@ -742,7 +763,7 @@ function RadialNode({
         t.provisional ? "prov" : ""
       }`}
     >
-      {t.code ? <Flag value={t.flag} size={15} /> : <span className="fl">⏳</span>}
+      {t.code && <Flag value={t.flag} size={15} />}
       <span className="rx-name">{t.code ? t.name : t.placeholder}</span>
       <span className="rx-sc">
         {t.score ?? "–"}
@@ -758,7 +779,13 @@ function RadialNode({
       } ${settled ? "settled" : ""} ${empty ? "empty" : ""} ${
         faded ? "faded" : ""
       }`}
-      style={{ left: n.x, top: n.y }}
+      style={
+        {
+          left: n.x,
+          top: n.y,
+          "--depth": Math.pow(0.72, n.round), // efecto tubo: más chico hacia el centro
+        } as CSSProperties
+      }
       onClick={(e) => {
         e.stopPropagation();
         if (faded) return;
