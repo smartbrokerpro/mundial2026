@@ -1181,10 +1181,11 @@ a {
     grid-template-columns: minmax(0, 1fr) 28px 38px 32px;
     padding: 6px 3px;
   }
-  /* Radial: cajas mínimas, sin padding horizontal (~10% más chicas) */
+  /* Radial: cajas compactas (~10% más chicas) pero CON padding (para que el
+     contenido no quede pegado al borde al expandir). */
   .radial-node {
     min-width: 27px;
-    padding: 1px 0;
+    padding: 2px 5px;
     gap: 1px;
     border-radius: 6px;
   }
@@ -1192,7 +1193,6 @@ a {
     font-size: 7.2px;
     gap: 2px;
     font-weight: 800;
-    padding: 0 2px;
   }
   .rn-code {
     min-width: 13px;
@@ -1214,28 +1214,36 @@ a {
   .radial-node.active {
     min-width: 100px;
   }
-  /* Caja de la final: proporcionada al resto (no gigante) */
+  /* Caja de la final: al tamaño de un nodo normal (se oculta la fecha, que la
+     forzaba a ser ancha). */
   .radial-final {
-    min-width: 84px;
-    padding: 4px 7px;
-    border-radius: 10px;
+    min-width: 34px;
+    padding: 3px 6px;
+    border-radius: 8px;
+  }
+  .radial-final .fl-img {
+    width: 9px;
+    height: 9px;
+  }
+  .radial-final .fl {
+    font-size: 9px;
   }
   .rf-row {
-    font-size: 9px;
-    gap: 5px;
-    padding: 2px 0;
+    font-size: 7.6px;
+    gap: 3px;
+    padding: 1px 0;
   }
   .rf-name {
-    font-size: 9px;
+    font-size: 7.6px;
   }
   .rf-sc {
-    font-size: 10px;
-  }
-  .rf-status {
     font-size: 8px;
   }
+  .rf-status {
+    display: none; /* la línea de fecha agrandaba la caja */
+  }
   .radial-champ {
-    font-size: 10px;
+    font-size: 9px;
   }
   .radial-trophy {
     font-size: 26px;
