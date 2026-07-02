@@ -171,7 +171,9 @@ void main(){
 export default function RadialBracket({ rounds }: { rounds: Round[] }) {
   const wrapRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [size, setSize] = useState(720);
+  const [dims, setDims] = useState({ w: 720, h: 720 });
+  const { w, h } = dims;
+  const size = Math.min(w, h); // dimensión de referencia del círculo
   const [selected, setSelected] = useState<string | null>(null);
   const [fs, setFs] = useState(false); // pantalla completa (solo el radial)
   // Zoom por pasos: 0 = todos los anillos; cada paso lleva el siguiente anillo
@@ -204,13 +206,16 @@ export default function RadialBracket({ rounds }: { rounds: Round[] }) {
     const el = wrapRef.current;
     if (!el) return;
     const measure = () => {
-      const w = el.clientWidth;
-      const h = el.clientHeight;
-      setSize(
-        fs
-          ? Math.max(360, Math.min(w, h) - 24) // llena el viewport (cuadrado)
-          : Math.max(360, Math.min(w, 820))
-      );
+      const cw = el.clientWidth;
+      const ch = el.clientHeight;
+      if (fs) {
+        // Fullscreen: el stage ocupa todo el viewport (no cuadrado) -> el zoom/click
+        // no se recorta contra un cuadrado chico.
+        setDims({ w: cw, h: ch });
+      } else {
+        const s = Math.max(360, Math.min(cw, 820));
+        setDims({ w: s, h: s });
+      }
     };
     measure();
     const ro = new ResizeObserver(measure);
@@ -233,8 +238,8 @@ export default function RadialBracket({ rounds }: { rounds: Round[] }) {
   // Layout radial: anillo exterior equiespaciado; cada padre = promedio angular de sus hijos.
   const nodes = useMemo<Node[]>(() => {
     if (!rounds?.length) return [];
-    const cx = size / 2;
-    const cy = size / 2;
+    const cx = w / 2;
+    const cy = h / 2;
     const Rmax = size * (size < 480 ? 0.36 : 0.42); // más compacto en móvil
     const angle = new Map<string, number>();
     const out: Node[] = [];
@@ -285,7 +290,7 @@ export default function RadialBracket({ rounds }: { rounds: Round[] }) {
       }
     });
     return out;
-  }, [rounds, size]);
+  }, [rounds, w, h, size]);
 
   // WebGL: dibuja conectores animados + brillos de nodos.
   useEffect(() => {
@@ -299,8 +304,8 @@ export default function RadialBracket({ rounds }: { rounds: Round[] }) {
     if (!gl) return;
 
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
-    canvas.width = size * dpr;
-    canvas.height = size * dpr;
+    canvas.width = w * dpr;
+    canvas.height = h * dpr;
 
     const bySlot = new Map(nodes.map((n) => [n.slot, n]));
 
@@ -420,7 +425,7 @@ export default function RadialBracket({ rounds }: { rounds: Round[] }) {
     };
     draw();
     return () => cancelAnimationFrame(raf);
-  }, [nodes, size, zoomLevel]);
+  }, [nodes, w, h, zoomLevel]);
 
   // Goleadores del partido seleccionado (on-demand, solo si es de ESPN y ya empezó).
   const selForFetch = nodes.find((n) => n.slot === selected);
@@ -462,8 +467,8 @@ export default function RadialBracket({ rounds }: { rounds: Round[] }) {
   const Z = 1.55;
   const sceneStyle: CSSProperties = sel
     ? {
-        transform: `translate(${size / 2 - sel.x * Z}px, ${
-          size / 2 - sel.y * Z
+        transform: `translate(${w / 2 - sel.x * Z}px, ${
+          h / 2 - sel.y * Z
         }px) scale(${Z})`,
         transformOrigin: "0 0",
       }
@@ -488,7 +493,7 @@ export default function RadialBracket({ rounds }: { rounds: Round[] }) {
         <div
           className="radial-stage"
           ref={stageRef}
-          style={{ width: size, height: size }}
+          style={{ width: w, height: h }}
           onClick={() => setSelected(null)}
         >
           <div className="radial-scene" style={sceneStyle}>
@@ -496,10 +501,10 @@ export default function RadialBracket({ rounds }: { rounds: Round[] }) {
               <div
                 key={i}
                 className={`radial-orbit ${i < zoomLevel ? "faded" : ""}`}
-                style={{ width: r * 2, height: r * 2, left: size / 2, top: size / 2 }}
+                style={{ width: r * 2, height: r * 2, left: w / 2, top: h / 2 }}
               />
             ))}
-            <canvas ref={canvasRef} style={{ width: size, height: size }} />
+            <canvas ref={canvasRef} style={{ width: w, height: h }} />
             {nodes
               .filter((n) => n.round !== 4)
               .map((n) => (
