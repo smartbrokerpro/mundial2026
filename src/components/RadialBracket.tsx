@@ -174,8 +174,31 @@ export default function RadialBracket({ rounds }: { rounds: Round[] }) {
   const [size, setSize] = useState(720);
   const [selected, setSelected] = useState<string | null>(null);
   const [fs, setFs] = useState(false); // pantalla completa (solo el radial)
+  // Zoom por pasos: 0 = todos los anillos; cada paso lleva el siguiente anillo
+  // (R16, cuartos, semis) al borde, ocultando los exteriores. 4 niveles (0..3).
+  const [zoomLevel, setZoomLevel] = useState(0);
+  const stageRef = useRef<HTMLDivElement>(null);
+  const wheelLock = useRef(false);
   const toggle = (slot: string) =>
     setSelected((s) => (s === slot ? null : slot));
+  const ready = (rounds?.length ?? 0) > 0; // el stage recién existe con datos
+
+  // Rueda del mouse: un scroll = un anillo (paso discreto), no continuo.
+  useEffect(() => {
+    const el = stageRef.current;
+    if (!el) return;
+    const onWheel = (e: WheelEvent) => {
+      e.preventDefault();
+      if (wheelLock.current) return; // throttle: un paso por gesto
+      wheelLock.current = true;
+      window.setTimeout(() => (wheelLock.current = false), 380);
+      const dir = e.deltaY < 0 ? 1 : -1;
+      setSelected(null);
+      setZoomLevel((l) => Math.min(3, Math.max(0, l + dir)));
+    };
+    el.addEventListener("wheel", onWheel, { passive: false });
+    return () => el.removeEventListener("wheel", onWheel);
+  }, [ready]);
 
   useEffect(() => {
     const el = wrapRef.current;
@@ -197,7 +220,7 @@ export default function RadialBracket({ rounds }: { rounds: Round[] }) {
       ro.disconnect();
       window.removeEventListener("resize", measure);
     };
-  }, [fs]);
+  }, [fs, ready]);
 
   // ESC sale de pantalla completa.
   useEffect(() => {
@@ -295,6 +318,7 @@ export default function RadialBracket({ rounds }: { rounds: Round[] }) {
     };
     for (const n of nodes) {
       if (!n.nextSlot) continue;
+      if (n.round < zoomLevel) continue; // conector de anillo superado -> no se dibuja
       const p = bySlot.get(n.nextSlot);
       if (!p) continue;
       // dirección hijo -> padre
@@ -329,6 +353,7 @@ export default function RadialBracket({ rounds }: { rounds: Round[] }) {
     // ---- geometría de nodos (billboards) ----
     const nodeVerts: number[] = [];
     for (const n of nodes) {
+      if (n.round < zoomLevel) continue; // brillo de anillo superado -> oculto
       const rad = (n.round === 4 ? 34 : 20 - n.round * 2.2) * dpr;
       const state = n.live ? 2 : n.done ? 1 : 0;
       const x = n.x * dpr,
@@ -395,7 +420,7 @@ export default function RadialBracket({ rounds }: { rounds: Round[] }) {
     };
     draw();
     return () => cancelAnimationFrame(raf);
-  }, [nodes, size]);
+  }, [nodes, size, zoomLevel]);
 
   // Goleadores del partido seleccionado (on-demand, solo si es de ESPN y ya empezó).
   const selForFetch = nodes.find((n) => n.slot === selected);
@@ -442,7 +467,11 @@ export default function RadialBracket({ rounds }: { rounds: Round[] }) {
         }px) scale(${Z})`,
         transformOrigin: "0 0",
       }
-    : { transform: "none", transformOrigin: "0 0" };
+    : {
+        // Escala para que el anillo del nivel actual quede en el borde.
+        transform: `scale(${1 / (RING[zoomLevel] || 1)})`,
+        transformOrigin: "50% 50%",
+      };
 
   return (
     <div className={`radial-view ${fs ? "fs" : ""}`}>
@@ -458,6 +487,7 @@ export default function RadialBracket({ rounds }: { rounds: Round[] }) {
         )}
         <div
           className="radial-stage"
+          ref={stageRef}
           style={{ width: size, height: size }}
           onClick={() => setSelected(null)}
         >
@@ -465,13 +495,8 @@ export default function RadialBracket({ rounds }: { rounds: Round[] }) {
             {orbits.map((r, i) => (
               <div
                 key={i}
-                className="radial-orbit"
-                style={{
-                  width: r * 2,
-                  height: r * 2,
-                  left: size / 2,
-                  top: size / 2,
-                }}
+                className={`radial-orbit ${i < zoomLevel ? "faded" : ""}`}
+                style={{ width: r * 2, height: r * 2, left: size / 2, top: size / 2 }}
               />
             ))}
             <canvas ref={canvasRef} style={{ width: size, height: size }} />
@@ -482,6 +507,7 @@ export default function RadialBracket({ rounds }: { rounds: Round[] }) {
                   key={n.slot}
                   n={n}
                   active={n.slot === selected}
+                  faded={n.round < zoomLevel}
                   onSelect={toggle}
                   scorers={n.slot === selected ? scorers : undefined}
                 />
@@ -503,7 +529,7 @@ export default function RadialBracket({ rounds }: { rounds: Round[] }) {
             <span><i className="lg s2" /> 4° · 2°</span>
             <span><i className="lg s3" /> Final</span>
             <span><i className="lg live" /> En vivo</span>
-            <span className="hint">Click en un partido para acercar</span>
+            <span className="hint">Rueda: acercar ronda por ronda · click en un partido</span>
           </div>
         )}
       </div>
@@ -560,7 +586,8 @@ function SideTeam({ t }: { t: BTeam }) {
   return (
     <span className={`rs-team ${t.provisional ? "prov" : ""}`}>
       {t.code ? <Flag value={t.flag} size={13} /> : <span className="fl">⏳</span>}
-      {t.code ?? "—"}
+      <span className="rs-tcode">{t.code ?? "—"}</span>
+      {t.score != null && <span className="rs-tsc">{t.score}</span>}
     </span>
   );
 }
@@ -657,11 +684,13 @@ function GoalsList({ list }: { list: Scorer[] }) {
 function RadialNode({
   n,
   active,
+  faded,
   onSelect,
   scorers,
 }: {
   n: Node;
   active: boolean;
+  faded: boolean;
   onSelect: (slot: string) => void;
   scorers?: { home: Scorer[]; away: Scorer[] };
 }) {
@@ -713,10 +742,13 @@ function RadialNode({
     <div
       className={`radial-node stage-${n.m.stage} ${cls} ${
         active ? "active" : ""
-      } ${settled ? "settled" : ""} ${empty ? "empty" : ""}`}
+      } ${settled ? "settled" : ""} ${empty ? "empty" : ""} ${
+        faded ? "faded" : ""
+      }`}
       style={{ left: n.x, top: n.y }}
       onClick={(e) => {
         e.stopPropagation();
+        if (faded) return;
         onSelect(n.slot);
       }}
     >

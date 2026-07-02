@@ -190,14 +190,18 @@ export async function fetchWorldCup(): Promise<{
   });
 
   // === Reconstrucción del bracket real ===
-  // El número de partido = orden en que la API devuelve los eventos de cada ronda
-  // (verificado: idx1..16 coincide con las referencias "Round of 32 N Winner").
+  // El número de partido = orden por ID de evento (estable). OJO: el orden en que la
+  // API *devuelve* los eventos cambia según estado (en vivo/terminado), pero el ID es
+  // fijo y coincide con la numeración de los placeholders "Round of 32 N Winner".
   // El enlace ronda→ronda se deduce de cada partido de la ronda siguiente:
   //   - lado con placeholder "... N Winner"  -> alimentado por el partido #N de la ronda previa
   //   - lado con equipo real                 -> alimentado por el partido que ese equipo ganó
+  const stageEvents = (s: Stage) =>
+    [...(koByStage.get(s) || [])].sort((a, b) => Number(a.id) - Number(b.id));
+
   const slotOf = new Map<string, string>();
   for (const stage of KO_ORDER) {
-    (koByStage.get(stage) || []).forEach((e, i) =>
+    stageEvents(stage).forEach((e, i) =>
       slotOf.set(`ESPN-${e.id}`, `${KO_PREFIX[stage]}-${i + 1}`)
     );
   }
@@ -206,32 +210,35 @@ export async function fetchWorldCup(): Promise<{
     const w = e.competitions[0].competitors.find((c) => c.winner === true);
     return w ? codeOf(w) : null;
   };
-  // Nº del partido de la ronda previa que alimenta este lado (por placeholder o por ganador).
-  const feederNumber = (
+  // Partido de la ronda previa que alimenta este lado. Prioridad:
+  //   1) EMPAREJAR POR EQUIPO: si el lado ya es un equipo real, es el ganador de
+  //      ese partido -> 100% confiable, no depende de numeración.
+  //   2) PLACEHOLDER "... N Winner": partido #N por orden de ID (solo para los aún
+  //      no definidos; se auto-corrige a (1) cuando se juegan).
+  const feederEvent = (
     c: RawCompetitor,
-    winnerNumByCode: Map<string, number>
-  ): number | null => {
+    prevList: RawEvent[]
+  ): RawEvent | undefined => {
+    const code = codeOf(c);
+    if (code) {
+      const byTeam = prevList.find((e) => rawWinnerCode(e) === code);
+      if (byTeam) return byTeam;
+    }
     const m = (c.team.displayName || "").match(/(\d+)\s*Winner$/i);
-    if (m) return parseInt(m[1], 10);
-    return winnerNumByCode.get(codeOf(c)) ?? null;
+    if (m) return prevList[parseInt(m[1], 10) - 1];
+    return undefined;
   };
 
   const nextSlotByMatchId = new Map<string, string>();
   const nextSideByMatchId = new Map<string, "home" | "away">();
   for (let r = 0; r < KO_ORDER.length - 1; r++) {
-    const prevList = koByStage.get(KO_ORDER[r]) || [];
-    const curList = koByStage.get(KO_ORDER[r + 1]) || [];
-    const winnerNumByCode = new Map<string, number>();
-    prevList.forEach((e, i) => {
-      const w = rawWinnerCode(e);
-      if (w) winnerNumByCode.set(w, i + 1);
-    });
+    const prevList = stageEvents(KO_ORDER[r]);
+    const curList = stageEvents(KO_ORDER[r + 1]);
     for (const X of curList) {
       const xSlot = slotOf.get(`ESPN-${X.id}`);
       if (!xSlot) continue;
       for (const side of X.competitions[0].competitors) {
-        const fn = feederNumber(side, winnerNumByCode);
-        const prev = fn ? prevList[fn - 1] : undefined;
+        const prev = feederEvent(side, prevList);
         if (prev) {
           nextSlotByMatchId.set(`ESPN-${prev.id}`, xSlot);
           nextSideByMatchId.set(`ESPN-${prev.id}`, side.homeAway);
