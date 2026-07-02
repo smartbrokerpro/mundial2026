@@ -173,7 +173,11 @@ export default function RadialBracket({ rounds }: { rounds: Round[] }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [dims, setDims] = useState({ w: 720, h: 720 });
   const { w, h } = dims;
-  const size = Math.min(w, h); // dimensión de referencia del círculo
+  const size = Math.min(w, h); // dimensión de referencia (escala de nodos)
+  // Radios del anillo exterior por eje (elipse): usa el alto disponible en
+  // pantallas verticales. Márgenes = espacio para las cajas de los nodos.
+  const RmaxX = Math.max(60, w / 2 - 56);
+  const RmaxY = Math.max(60, h / 2 - 42);
   const [selected, setSelected] = useState<string | null>(null);
   const [fs, setFs] = useState(false); // pantalla completa (solo el radial)
   // Zoom por pasos: 0 = todos los anillos; cada paso lleva el siguiente anillo
@@ -213,8 +217,11 @@ export default function RadialBracket({ rounds }: { rounds: Round[] }) {
         // no se recorta contra un cuadrado chico.
         setDims({ w: cw, h: ch });
       } else {
-        const s = Math.max(360, Math.min(cw, 820));
-        setDims({ w: s, h: s });
+        const bw = Math.max(320, Math.min(cw, 820));
+        // En móvil (angosto) lo hacemos más alto que ancho -> elipse vertical que
+        // reparte los 16 nodos y no queda apretado. En desktop, cuadrado.
+        const bh = bw < 560 ? Math.round(bw * 1.5) : bw;
+        setDims({ w: bw, h: bh });
       }
     };
     measure();
@@ -240,7 +247,6 @@ export default function RadialBracket({ rounds }: { rounds: Round[] }) {
     if (!rounds?.length) return [];
     const cx = w / 2;
     const cy = h / 2;
-    const Rmax = size * (size < 480 ? 0.36 : 0.42); // más compacto en móvil
     const angle = new Map<string, number>();
     const out: Node[] = [];
 
@@ -272,14 +278,15 @@ export default function RadialBracket({ rounds }: { rounds: Round[] }) {
     }
 
     rounds.forEach((round, r) => {
-      const radius = Rmax * (RING[r] ?? 0);
+      const rx = RmaxX * (RING[r] ?? 0);
+      const ry = RmaxY * (RING[r] ?? 0);
       for (const m of round.matches) {
         const a = angle.get(m.slot) ?? -HALF_PI;
-        const y = cy + Math.sin(a) * radius;
+        const y = cy + Math.sin(a) * ry;
         out.push({
           slot: m.slot,
           nextSlot: m.nextSlot,
-          x: cx + Math.cos(a) * radius,
+          x: cx + Math.cos(a) * rx,
           y,
           round: r,
           live: m.status === "LIVE" || m.status === "PAUSED",
@@ -290,7 +297,7 @@ export default function RadialBracket({ rounds }: { rounds: Round[] }) {
       }
     });
     return out;
-  }, [rounds, w, h, size]);
+  }, [rounds, w, h, RmaxX, RmaxY]);
 
   // WebGL: dibuja conectores animados + brillos de nodos.
   useEffect(() => {
@@ -458,9 +465,8 @@ export default function RadialBracket({ rounds }: { rounds: Round[] }) {
     })
     .slice(0, 14);
 
-  // Círculos guía (órbitas) detrás de cada anillo.
-  const Rmax = size * (size < 480 ? 0.36 : 0.42);
-  const orbits = RING.slice(0, 4).map((f) => f * Rmax);
+  // Círculos guía (órbitas) detrás de cada anillo (elipses en pantallas verticales).
+  const orbits = RING.slice(0, 4).map((f) => ({ rx: f * RmaxX, ry: f * RmaxY }));
 
   // Zoom a la zona del nodo seleccionado (suave).
   const sel = nodes.find((n) => n.slot === selected) ?? null;
@@ -497,11 +503,11 @@ export default function RadialBracket({ rounds }: { rounds: Round[] }) {
           onClick={() => setSelected(null)}
         >
           <div className="radial-scene" style={sceneStyle}>
-            {orbits.map((r, i) => (
+            {orbits.map((o, i) => (
               <div
                 key={i}
                 className={`radial-orbit ${i < zoomLevel ? "faded" : ""}`}
-                style={{ width: r * 2, height: r * 2, left: w / 2, top: h / 2 }}
+                style={{ width: o.rx * 2, height: o.ry * 2, left: w / 2, top: h / 2 }}
               />
             ))}
             <canvas ref={canvasRef} style={{ width: w, height: h }} />
