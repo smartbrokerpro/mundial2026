@@ -479,6 +479,7 @@ a {
 .radial-main {
   flex: 1 1 520px;
   min-width: 0;
+  position: relative;
 }
 .radial-stage {
   position: relative;
@@ -822,6 +823,27 @@ a {
   border-color: var(--live);
   color: var(--live);
 }
+/* Botón "ver en grande" — arriba a la derecha del radial */
+.radial-fs-open {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  z-index: 30;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  color: var(--muted);
+  font-size: 15px;
+  cursor: pointer;
+  backdrop-filter: blur(8px);
+  transition: 0.15s;
+}
+.radial-fs-open:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
 /* Borde por etapa: verde opaco (dieciseisavos) -> verde brillante (final) */
 .radial-node.stage-LAST_32 { border-color: rgba(0, 224, 164, 0.18); }
 .radial-node.stage-LAST_16 { border-color: rgba(0, 224, 164, 0.38); }
@@ -1159,46 +1181,63 @@ a {
     grid-template-columns: minmax(0, 1fr) 28px 38px 32px;
     padding: 6px 3px;
   }
-  /* Radial: cajas mínimas, sin padding horizontal, para máximo aprovechamiento */
+  /* Radial: cajas mínimas, sin padding horizontal (~10% más chicas) */
   .radial-node {
-    min-width: 30px;
+    min-width: 27px;
     padding: 1px 0;
     gap: 1px;
     border-radius: 6px;
   }
   .rn-team {
-    font-size: 8px;
+    font-size: 7.2px;
     gap: 2px;
     font-weight: 800;
     padding: 0 2px;
   }
   .rn-code {
-    min-width: 14px;
+    min-width: 13px;
   }
   .radial-node .fl-img {
-    width: 10px;
-    height: 10px;
+    width: 9px;
+    height: 9px;
   }
   .radial-node .fl {
-    font-size: 10px;
+    font-size: 9px;
   }
   .rn-sc {
-    font-size: 8.5px;
+    font-size: 7.6px;
     padding-right: 1px;
   }
   .rn-when {
-    font-size: 7.5px;
+    font-size: 6.8px;
   }
   .radial-node.active {
-    min-width: 112px;
+    min-width: 100px;
   }
+  /* Caja de la final: proporcionada al resto (no gigante) */
   .radial-final {
-    min-width: 118px;
-    padding: 7px 9px;
+    min-width: 84px;
+    padding: 4px 7px;
+    border-radius: 10px;
   }
-  .rf-row,
-  .rf-name,
+  .rf-row {
+    font-size: 9px;
+    gap: 5px;
+    padding: 2px 0;
+  }
+  .rf-name {
+    font-size: 9px;
+  }
+  .rf-sc {
+    font-size: 10px;
+  }
+  .rf-status {
+    font-size: 8px;
+  }
   .radial-champ {
-    font-size: 12px;
+    font-size: 10px;
+  }
+  .radial-trophy {
+    font-size: 26px;
   }
 }

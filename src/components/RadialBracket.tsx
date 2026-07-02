@@ -484,13 +484,21 @@ export default function RadialBracket({ rounds }: { rounds: Round[] }) {
   return (
     <div className={`radial-view ${fs ? "fs" : ""}`}>
       <div className="radial-main" ref={wrapRef}>
-        {fs && (
+        {fs ? (
           <button
             className="radial-fs-close"
             onClick={() => setFs(false)}
             title="Salir de pantalla completa (Esc)"
           >
             ✕
+          </button>
+        ) : (
+          <button
+            className="radial-fs-open"
+            onClick={() => setFs(true)}
+            title="Ver en grande"
+          >
+            ⛶
           </button>
         )}
         <div
@@ -582,9 +590,6 @@ export default function RadialBracket({ rounds }: { rounds: Round[] }) {
             <div className="loading">No hay próximos partidos.</div>
           )}
         </div>
-        <button className="radial-fs-btn" onClick={() => setFs(true)}>
-          ⛶ Ver el cuadro en grande
-        </button>
       </aside>
     </div>
   );
