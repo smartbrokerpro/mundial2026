@@ -99,7 +99,7 @@ export default function Home() {
               className={bracketView === "radial2" ? "active" : ""}
               onClick={() => setBracketView("radial2")}
             >
-              Radial 2 ⚡
+              Radial 3D ⚡
             </button>
             <button
               className={bracketView === "clasico" ? "active" : ""}
