@@ -1273,3 +1273,65 @@ a {
     font-size: 26px;
   }
 }
+
+/* ---------- Radial 2 (escena 3D real: montaña orbital WebGL) ---------- */
+.r2-stage {
+  position: relative;
+  overflow: hidden;
+  margin: 0 auto;
+  border-radius: 16px;
+  touch-action: none; /* orbitar/pellizcar lo maneja la cámara, no el scroll */
+  cursor: grab;
+  user-select: none;
+  -webkit-user-select: none;
+  background: radial-gradient(circle at 50% 42%, #0a1126, transparent 75%);
+}
+.r2-stage > canvas {
+  position: absolute;
+  inset: 0;
+  display: block;
+}
+.r2-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none; /* el stage recibe los gestos; las cajas re-habilitan */
+}
+/* Elementos proyectados en 3D: la cámara escribe transform/z-index/opacity por
+   frame. Anclados en 0,0 y ocultos hasta la primera proyección (sin flash). */
+.r2-3d {
+  left: 0;
+  top: 0;
+  visibility: hidden;
+  will-change: transform, opacity;
+  pointer-events: auto;
+  backface-visibility: hidden;
+}
+/* Sin transiciones de transform/opacity: las posee el loop 3D (si no, pelean). */
+.r2n {
+  transform: none;
+  transition: min-width 0.4s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s,
+    border-color 0.2s, background 0.3s;
+}
+.r2n.active {
+  min-width: 150px;
+  box-shadow: 0 10px 34px rgba(0, 0, 0, 0.55), 0 0 22px rgba(91, 140, 255, 0.3);
+}
+/* En vivo: pulso de luz (cero blur: las chispas las pone la GPU alrededor) */
+.r2n.live {
+  animation: r2pulse 2.2s ease-in-out infinite;
+}
+@keyframes r2pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 10px rgba(255, 77, 109, 0.25);
+  }
+  50% {
+    box-shadow: 0 0 24px rgba(255, 77, 109, 0.6);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .r2n.live {
+    animation: none;
+  }
+}

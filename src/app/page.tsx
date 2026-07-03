@@ -6,12 +6,13 @@ import MatchCard, { FeedMatch } from "@/components/MatchCard";
 import Groups from "@/components/Groups";
 import Bracket from "@/components/Bracket";
 import RadialBracket from "@/components/RadialBracket";
+import RadialBracket2 from "@/components/RadialBracket2";
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
 const REFRESH = 15000; // 15s -> sensación "en vivo"
 
 type Tab = "resumen" | "grupos" | "llaves";
-type BracketView = "clasico" | "radial";
+type BracketView = "clasico" | "radial" | "radial2";
 
 export default function Home() {
   const [tab, setTab] = useState<Tab>("llaves");
@@ -95,6 +96,12 @@ export default function Home() {
               Radial
             </button>
             <button
+              className={bracketView === "radial2" ? "active" : ""}
+              onClick={() => setBracketView("radial2")}
+            >
+              Radial 2 ⚡
+            </button>
+            <button
               className={bracketView === "clasico" ? "active" : ""}
               onClick={() => setBracketView("clasico")}
             >
@@ -152,6 +159,8 @@ export default function Home() {
           )}
           {bracketView === "clasico" ? (
             <Bracket rounds={bracketData?.rounds ?? []} />
+          ) : bracketView === "radial2" ? (
+            <RadialBracket2 rounds={bracketData?.rounds ?? []} />
           ) : (
             <RadialBracket rounds={bracketData?.rounds ?? []} />
           )}
