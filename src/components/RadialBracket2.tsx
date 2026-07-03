@@ -342,7 +342,11 @@ void main(){
   gl_Position = clipOf(ndc, vz);
   v_col = a_col + vec3(0.10, 0.30, 0.25) * fly; // se energiza al volar
   v_a = on * (1.0 - fly);
-  gl_PointSize = clamp(u_chunk * (1.0 - fly * 0.45) * u_fpx / max(vz, 0.06) * u_dpr, 1.0, 22.0);
+  // Tamaño 100% perspectivo: sin saturar arriba (chunks cercanos grandes) y los
+  // que quedarían bajo 1px (lejanos) compensan con alfa en vez de clavarse en 1.
+  float szpx = u_chunk * (1.0 - fly * 0.45) * u_fpx / max(vz, 0.06) * u_dpr;
+  gl_PointSize = clamp(szpx, 1.0, 64.0);
+  v_a *= clamp(szpx / 1.5, 0.0, 1.0);
 }`;
 const DISS_FS = `
 precision mediump float;
@@ -870,7 +874,15 @@ export default function RadialBracket2({ rounds }: { rounds: Round[] }) {
     const small = Math.min(w, h) < 560;
     const CW = small ? 42 : 64; // tamaño aprox de la caja compacta en px
     const CH = small ? 30 : 44;
-    const [GW, GH] = quality === 2 ? [16, 10] : quality === 1 ? [12, 8] : [9, 6];
+    // En pantallas chicas la grilla es más gruesa: chunks de ~4px de caja, no ~2.6
+    // (sub-pixel), para que el tamaño perspectivo se lea a cualquier distancia.
+    const [GW, GH] = small
+      ? [10, 7]
+      : quality === 2
+      ? [16, 10]
+      : quality === 1
+      ? [12, 8]
+      : [9, 6];
     const chunkWorld = (CW / GW) * 1.35 * cardK;
     const diss: number[] = [];
     for (const n of nodes) {
